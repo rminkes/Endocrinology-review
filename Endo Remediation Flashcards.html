@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endocrinology Remediation — Flashcard Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --card-q: #1c2433; --card-a: #0f2a1e;
+  --border: #30363d; --accent: #3fb68e; --accent2: #58a6ff; --gold: #e3b341;
+  --text: #e6edf3; --muted: #8b949e; --dim: #484f58;
+  --danger: #f85149; --correct: #3fb68e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: linear-gradient(rgba(63,182,142,.025) 1px,transparent 1px), linear-gradient(90deg,rgba(63,182,142,.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.container { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:0 20px 80px; }
+
+/* Header */
+header { text-align:center; padding:48px 0 32px; border-bottom:1px solid var(--border); margin-bottom:28px; }
+.header-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; color:var(--accent); background:rgba(63,182,142,.1); border:1px solid rgba(63,182,142,.25); padding:4px 12px; border-radius:20px; margin-bottom:16px; text-transform:uppercase; }
+h1 { font-family:'DM Serif Display',serif; font-size:clamp(26px,5vw,42px); font-weight:400; color:var(--text); margin-bottom:10px; }
+h1 em { font-style:italic; color:var(--accent); }
+.header-sub { font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.6; }
+.stats-bar { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; }
+.stat { display:flex; flex-direction:column; align-items:center; gap:1px; }
+.stat-val { font-family:'DM Serif Display',serif; font-size:26px; color:var(--accent); }
+.stat-val.blue { color:var(--accent2); }
+.stat-val.red { color:var(--danger); }
+.stat-label { font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.1em; font-family:'JetBrains Mono',monospace; }
+
+/* Progress */
+.progress-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 22px; margin-bottom:24px; }
+.progress-header { display:flex; justify-content:space-between; margin-bottom:10px; font-size:13px; color:var(--muted); }
+.prog-outer { height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
+.prog-inner { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:3px; transition:width .4s ease; width:0%; }
+
+/* Controls */
+.controls { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; align-items:center; }
+.btn { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; padding:9px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+.btn:hover { background:var(--card-q); border-color:var(--accent); color:var(--accent); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:#0d1117; font-weight:600; }
+.btn.primary:hover { background:#4ecfa0; }
+.mode-toggle { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-left:auto; }
+.mode-btn { font-size:12px; font-family:'DM Sans',sans-serif; padding:8px 14px; border:none; background:var(--surface); color:var(--muted); cursor:pointer; transition:all .2s; font-weight:500; }
+.mode-btn.active { background:var(--card-q); color:var(--text); }
+
+/* Section nav */
+.section-nav { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:22px; }
+.snav-title { font-size:10px; font-family:'JetBrains Mono',monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+.snav-list { display:flex; flex-direction:column; gap:4px; }
+.snav-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:all .2s; border:1px solid transparent; }
+.snav-item:hover { background:var(--card-q); }
+.snav-item.active { background:var(--card-q); border-color:var(--border); }
+.snav-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.snav-name { font-size:13px; color:var(--text); flex:1; }
+.snav-count { font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; }
+.snav-pct { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; min-width:30px; text-align:right; }
+
+/* CARD — scale-flip approach, height is fully natural */
+.card-wrap { margin-bottom:18px; }
+
+.card {
+  border-radius:16px; overflow:hidden;
+  transform-origin:center center;
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+}
+.card.flipping { transform:scaleX(0); }
+
+.card-front { background:var(--card-q); border:1px solid var(--border); border-radius:16px; }
+.card-back  { background:var(--card-a); border:1px solid rgba(63,182,142,.3); border-radius:16px; display:none; }
+.card.showing-answer .card-front { display:none; }
+.card.showing-answer .card-back  { display:block; }
+
+.card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px 12px; border-bottom:1px solid var(--border); }
+.card-back .card-header { border-bottom-color:rgba(63,182,142,.15); }
+.sec-tag { font-size:10px; font-family:'JetBrains Mono',monospace; letter-spacing:.08em; padding:3px 10px; border-radius:10px; text-transform:uppercase; }
+.card-num { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); }
+
+.card-body { padding:26px 26px 22px; }
+.card-label { font-size:10px; font-family:'JetBrains Mono',monospace; letter-spacing:.15em; text-transform:uppercase; margin-bottom:12px; }
+.card-front .card-label { color:var(--accent2); }
+.card-back  .card-label { color:var(--accent); }
+.card-question { font-size:clamp(15px,2.2vw,18px); line-height:1.7; color:var(--text); }
+.card-answer { font-size:clamp(14px,1.9vw,16px); line-height:1.8; color:#b5d4c4; }
+.card-answer strong { color:var(--accent); font-weight:600; }
+.card-answer em { color:var(--gold); font-style:normal; }
+
+.card-hint { padding:12px 20px 14px; border-top:1px solid var(--border); font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-align:center; letter-spacing:.04em; }
+.card-back .card-hint { border-top-color:rgba(63,182,142,.15); }
+
+/* Nav + Rating */
+.nav-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.nav-btn { width:42px; height:42px; border-radius:9px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0; }
+.nav-btn:hover:not(:disabled) { background:var(--card-q); border-color:var(--accent); color:var(--accent); }
+.nav-btn:disabled { opacity:.25; cursor:not-allowed; }
+.card-counter { flex:1; text-align:center; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--muted); }
+.card-counter span { color:var(--text); font-weight:500; }
+
+.rating-row { display:flex; gap:10px; justify-content:center; margin-bottom:24px; }
+.rating-row.hidden { display:none; }
+.rating-btn { flex:1; max-width:180px; padding:11px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.rating-btn.got:hover,.rating-btn.got.sel { background:rgba(63,182,142,.12); border-color:var(--correct); color:var(--correct); }
+.rating-btn.part:hover,.rating-btn.part.sel { background:rgba(227,179,65,.1); border-color:var(--gold); color:var(--gold); }
+.rating-btn.miss:hover,.rating-btn.miss.sel { background:rgba(248,81,73,.1); border-color:var(--danger); color:var(--danger); }
+
+/* Results overlay */
+.overlay { display:none; position:fixed; inset:0; background:rgba(13,17,23,.92); z-index:100; align-items:center; justify-content:center; padding:24px; }
+.overlay.show { display:flex; }
+.res-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:38px; max-width:480px; width:100%; text-align:center; }
+.res-score { font-family:'DM Serif Display',serif; font-size:68px; color:var(--accent); line-height:1; margin-bottom:6px; }
+.res-label { font-size:12px; color:var(--muted); margin-bottom:24px; font-family:'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+.res-row { display:flex; gap:14px; justify-content:center; margin-bottom:24px; }
+.rb { display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 16px; border-radius:10px; background:var(--bg); flex:1; }
+.rb-n { font-family:'DM Serif Display',serif; font-size:26px; }
+.rb-l { font-size:10px; color:var(--dim); font-family:'JetBrains Mono',monospace; text-transform:uppercase; }
+.rb.g .rb-n { color:var(--correct); } .rb.p .rb-n { color:var(--gold); } .rb.m .rb-n { color:var(--danger); }
+
+/* List mode */
+.list-section-head { font-family:'DM Serif Display',serif; font-size:20px; margin:28px 0 10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.list-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.list-q { padding:14px 18px; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:background .15s; }
+.list-q:hover { background:var(--card-q); }
+.list-qnum { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--dim); flex-shrink:0; margin-top:3px; }
+.list-qtext { font-size:14px; line-height:1.6; color:var(--text); }
+.list-a { padding:16px 18px; background:var(--card-a); border-top:1px solid rgba(63,182,142,.15); font-size:14px; line-height:1.75; color:#b5d4c4; display:none; }
+.list-a strong { color:var(--accent); }
+.list-a em { color:var(--gold); font-style:normal; }
+.list-arrow { margin-left:auto; color:var(--dim); flex-shrink:0; transition:transform .2s; }
+.list-item.open .list-arrow { transform:rotate(180deg); }
+
+/* Toast */
+.toast { position:fixed; bottom:22px; right:22px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:11px 16px; font-size:13px; color:var(--text); transform:translateY(70px); opacity:0; transition:all .3s; z-index:50; pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+
+@media(max-width:580px) {
+  .controls-right,.mode-toggle { margin-left:0; width:100%; }
+  .rating-row { flex-direction:column; align-items:center; }
+  .rating-btn { max-width:100%; width:100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="header-tag">OCOM OMS-I · Remediation Prep</div>
+  <h1>Endocrinology <em>Flashcards</em></h1>
+  <p class="header-sub">96 questions · 13 sections · Exam: May 28, 2026<br>Flip each card, read the answer, then rate yourself.</p>
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-val" id="sTotal">96</span><span class="stat-label">Total</span></div>
+    <div class="stat"><span class="stat-val blue" id="sDone">0</span><span class="stat-label">Seen</span></div>
+    <div class="stat"><span class="stat-val" id="sGot">0</span><span class="stat-label">Got It</span></div>
+    <div class="stat"><span class="stat-val red" id="sMiss">0</span><span class="stat-label">Missed</span></div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-header"><span>Progress</span><span id="progPct">0%</span></div>
+  <div class="prog-outer"><div class="prog-inner" id="progBar"></div></div>
+</div>
+
+<div class="controls">
+  <button class="btn primary" onclick="resetAll()">↺ Restart</button>
+  <button class="btn" onclick="shuffleDeck()">⇄ Shuffle</button>
+  <button class="btn" onclick="reviewMissed()">⚑ Review Missed</button>
+  <div class="mode-toggle" style="margin-left:auto">
+    <button class="mode-btn active" id="mFlash" onclick="setMode('flash')">Flashcard</button>
+    <button class="mode-btn" id="mList" onclick="setMode('list')">All Q&amp;A</button>
+  </div>
+</div>
+
+<!-- FLASH MODE -->
+<div id="flashMode">
+  <div class="section-nav">
+    <div class="snav-title">Jump to Section</div>
+    <div class="snav-list" id="snavList"></div>
+  </div>
+
+  <div class="card-wrap">
+    <div class="card" id="theCard" onclick="handleCardClick()">
+      <!-- front -->
+      <div class="card-front">
+        <div class="card-header">
+          <span class="sec-tag" id="secTagF"></span>
+          <span class="card-num" id="cardNumF"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-label">Question</div>
+          <div class="card-question" id="cardQ"></div>
+        </div>
+        <div class="card-hint">Click card or press Space to reveal answer</div>
+      </div>
+      <!-- back -->
+      <div class="card-back">
+        <div class="card-header">
+          <span class="sec-tag" id="secTagB" style="background:rgba(63,182,142,.12);color:var(--accent)">Answer</span>
+          <span class="card-num" id="cardNumB"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-label">Key Points</div>
+          <div class="card-answer" id="cardA"></div>
+        </div>
+        <div class="card-hint">Rate your answer below, then Next →</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn" id="prevBtn" onclick="prevCard()" disabled>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
+    </button>
+    <div class="card-counter">Card <span id="cCur">1</span> of <span id="cTot">96</span></div>
+    <button class="nav-btn" id="nextBtn" onclick="nextCard()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg>
+    </button>
+  </div>
+
+  <div class="rating-row hidden" id="ratingRow">
+    <button class="rating-btn got" onclick="rate('got')">✓ Got It</button>
+    <button class="rating-btn part" onclick="rate('part')">~ Partial</button>
+    <button class="rating-btn miss" onclick="rate('miss')">✗ Missed</button>
+  </div>
+</div>
+
+<!-- LIST MODE -->
+<div id="listMode" style="display:none">
+  <div id="listContainer"></div>
+</div>
+</div>
+
+<!-- Results -->
+<div class="overlay" id="overlay">
+  <div class="res-card">
+    <div class="res-score" id="resScore">--%</div>
+    <div class="res-label">Session Complete</div>
+    <div class="res-row">
+      <div class="rb g"><span class="rb-n" id="rG">0</span><span class="rb-l">Got It</span></div>
+      <div class="rb p"><span class="rb-n" id="rP">0</span><span class="rb-l">Partial</span></div>
+      <div class="rb m"><span class="rb-n" id="rM">0</span><span class="rb-l">Missed</span></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn primary" onclick="closeOverlay()">Continue</button>
+      <button class="btn" onclick="reviewMissed();closeOverlay()">Review Missed</button>
+      <button class="btn" onclick="resetAll();closeOverlay()">Start Over</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SECTIONS=[
+  {name:"Hormone Synthesis & Transport",short:"Endo 01",color:"#3fb68e"},
+  {name:"Receptors & Signaling",short:"Endo 02–03",color:"#58a6ff"},
+  {name:"Feedback & Secretion Control",short:"Endo 03–04",color:"#e3b341"},
+  {name:"Anterior & Posterior Pituitary",short:"Endo 04–05",color:"#f0883e"},
+  {name:"Growth Hormone",short:"Endo 06–07",color:"#bc8cff"},
+  {name:"Thyroid",short:"Endo 10,14–15",color:"#ff7b72"},
+  {name:"Adrenal",short:"Endo 18–19,21",color:"#79c0ff"},
+  {name:"Calcium & Parathyroid",short:"Endo 36–38",color:"#ffa657"},
+  {name:"Pancreas & Diabetes",short:"Endo 27–29,32",color:"#7ee787"},
+  {name:"Diabetes Pharmacology",short:"Endo 32,34",color:"#d2a8ff"},
+  {name:"Male Reproductive",short:"Endo 39",color:"#ff9bce"},
+  {name:"Female Reproductive",short:"Endo 40",color:"#56d364"},
+  {name:"MEN Syndromes",short:"Endo 33",color:"#a5d6ff"}
+];
+
+const ALL=[
+{s:0,q:"What is the precursor molecule required for synthesis of all steroid hormones, and how does this differ from the precursors for catecholamines and thyroid hormones?",a:"All <strong>steroid hormones</strong> are synthesized from <strong>cholesterol</strong>. Catecholamines (epinephrine, norepinephrine, dopamine) and thyroid hormones are both derived from the amino acid <em>tyrosine</em>. POMC (proopiomelanocortin) is the precursor for ACTH, not for steroid hormones."},
+{s:0,q:"What are the six types of chemical messengers that coordinate physiologic body functions? Briefly describe how each type works.",a:"(1) <strong>Endocrine</strong> — secreted into blood, acts on distant targets. (2) <strong>Paracrine</strong> — local diffusion to nearby cells. (3) <strong>Autocrine</strong> — acts back on the secreting cell itself. (4) <strong>Neural</strong> — neurotransmitters across synapses. (5) <strong>Neuroendocrine</strong> — neurons release hormones into blood. (6) <strong>Contact-dependent (juxtacrine)</strong> — membrane-bound ligands act via direct cell-to-cell contact."},
+{s:0,q:"How are peptide hormones synthesized and stored differently from steroid hormones? Why does this matter for speed of action?",a:"<strong>Peptide hormones</strong> are synthesized in advance and stored in secretory vesicles — released rapidly on demand, enabling action within minutes. <strong>Steroid hormones</strong> are not stored; they are synthesized on demand from cholesterol and diffuse freely out of cells, making their action slower (hours to days). Epinephrine acts in seconds; cortisol takes hours."},
+{s:0,q:"A patient with liver failure has elevated estrogen and cortisol despite no excess production. What metabolic process is impaired and why does its failure cause accumulation?",a:"The liver performs <strong>metabolic clearance</strong> of steroid hormones — conjugating them (glucuronidation/sulfation) for biliary and renal excretion. In liver failure this clearance is reduced, so steroid hormones accumulate. This explains gynecomastia in cirrhosis (elevated estrogen) and signs of hypercortisolism."},
+{s:0,q:"What chemical property allows steroid hormones (cortisol, aldosterone) to diffuse from blood to their intracellular receptors?",a:"Steroid hormones are <strong>lipid-soluble</strong>, allowing them to freely <strong>diffuse across cell membranes</strong> into the cytoplasm or nucleus to bind intracellular receptors. This contrasts with water-soluble peptide hormones, which cannot enter cells and must bind surface receptors."},
+{s:1,q:"Epinephrine acts within seconds during an emergency response. What type of receptor does it bind, and where is that receptor located?",a:"Epinephrine binds <strong>adrenergic receptors</strong>, which are <strong>G protein-coupled receptors (GPCRs)</strong> located on the <strong>cell membrane</strong>. These mediate rapid, non-genomic effects through second messenger systems (e.g., cAMP via adenylyl cyclase for β-receptors; IP3/DAG via phospholipase C for α1-receptors)."},
+{s:1,q:"Thyroid hormones (T3/T4) act by changing gene expression. What receptor type mediates this, and where in the cell is that receptor found?",a:"Thyroid hormones bind <strong>nuclear receptors</strong> located in direct association with chromosomes in the <strong>nucleus</strong>. They cause increased transcription of specific genes — a genomic mechanism explaining the slow onset (days to weeks) of thyroid hormone effects compared to membrane-receptor hormones."},
+{s:1,q:"Luteinizing hormone (LH) signals through what receptor type? How does this receptor class initiate intracellular signaling?",a:"LH acts through a <strong>G protein-coupled receptor (GPCR)</strong> on the cell membrane. Binding activates a G protein → stimulates <strong>adenylyl cyclase</strong> → raises <strong>cAMP</strong> → activates protein kinase A → phosphorylates target proteins to produce the cellular response (e.g., testosterone synthesis in Leydig cells)."},
+{s:1,q:"Insulin binds its receptor and initiates a phosphorylation cascade. What type of receptor is the insulin receptor, and what is the first intracellular event?",a:"The insulin receptor is a <strong>receptor tyrosine kinase (RTK)</strong>. Insulin binds the α-subunit, triggering <strong>autophosphorylation of β-subunit tyrosine residues</strong>. This activates the kinase domain, leading to downstream signaling (PI3K → AKT pathway) → GLUT4 translocation to the membrane → glucose uptake into muscle and fat."},
+{s:1,q:"A mutation prevents phosphorylation of a tyrosine kinase receptor after IGF-1 binding. What aspect of hormone action is most directly impaired?",a:"<strong>Intracellular signal transduction</strong> is blocked. Phosphorylation of the receptor's intracellular domain is required to activate downstream cascades. Without autophosphorylation, the signal cannot propagate past the receptor — blocking all downstream growth and metabolic effects even though hormone binding at the cell surface is intact."},
+{s:1,q:"Leptin binds its receptor on hypothalamic neurons and activates POMC to suppress appetite. What intracellular enzyme is directly activated by this receptor?",a:"Leptin receptor is a cytokine-class receptor that, on activation, recruits and activates <strong>JAK2 (Janus kinase 2)</strong>. JAK2 phosphorylates STAT3, which translocates to the nucleus to regulate gene expression — stimulating POMC production (anorexigenic) and suppressing NPY/AgRP (orexigenic)."},
+{s:1,q:"After insulin binds its RTK and autophosphorylation occurs, what is the primary downstream consequence?",a:"Autophosphorylation <strong>activates intracellular signaling pathways</strong> — primarily the PI3K/AKT pathway via insulin receptor substrates (IRS). This results in: GLUT4 vesicle translocation to the membrane (glucose uptake), glycogen synthase activation (glycogen synthesis), and inhibition of gluconeogenesis."},
+{s:2,q:"Explain the difference between negative feedback and positive feedback in hormone regulation. Give one example of each.",a:"<strong>Negative feedback</strong>: hormone elevation suppresses its own production (e.g., elevated T4 suppresses TSH; exogenous glucocorticoids suppress ACTH/CRH). <strong>Positive feedback</strong>: hormone elevation amplifies further release — the key example is <em>rising estrogen in mid-cycle triggering the LH surge</em> that causes ovulation. Positive feedback is rare in endocrinology."},
+{s:2,q:"A patient on exogenous thyroid hormone has suppressed TSH. What regulatory mechanism explains this finding?",a:"<strong>Negative feedback</strong>: elevated circulating T4/T3 acts on the anterior pituitary and hypothalamus to suppress TSH (and TRH) secretion. The exogenous hormone is physiologically indistinguishable from endogenous T4. This is the expected finding in a euthyroid patient on adequate levothyroxine therapy."},
+{s:2,q:"A patient with primary hypothyroidism has markedly elevated TSH. What mechanism accounts for this rise?",a:"Loss of negative feedback: <strong>reduced T4/T3 removes inhibition</strong> on the pituitary and hypothalamus → TRH rises → TSH rises. This is compensatory — the pituitary tries to rescue thyroid hormone production. Elevated TSH with low T4 is the hallmark of primary (thyroid gland) failure, distinguishing it from secondary (pituitary) failure."},
+{s:2,q:"Just before ovulation, rising estrogen causes a surge in LH rather than suppression. What type of feedback explains this?",a:"<strong>Positive feedback</strong>. Once estrogen from the dominant follicle exceeds a critical threshold, it switches from low-dose negative feedback to stimulating rapid LH secretion from the anterior pituitary. This LH surge triggers ovulation. This switch is unique — the same hormone exerts opposite feedback depending on concentration and duration."},
+{s:2,q:"How does the hypothalamic-hypophysial portal system function? Where do hypothalamic releasing hormones travel after release?",a:"Hypothalamic neurons secrete hormones into capillaries in the <strong>median eminence</strong>. These enter portal vessels that <em>bypass systemic circulation</em> and deliver signals directly to a <strong>second capillary bed in the anterior pituitary</strong>, where they bind specific cell types (thyrotrophs, corticotrophs, gonadotrophs, etc.) to regulate hormone secretion with high efficiency."},
+{s:2,q:"The anterior pituitary develops from which embryonic structure? What is it called?",a:"The anterior pituitary (adenohypophysis) arises from <strong>Rathke's pouch</strong> — an upward evagination of the <strong>oral ectoderm</strong> (pharyngeal epithelium). The posterior pituitary is derived from neuroectoderm (a downgrowth of the diencephalon). Knowing this origin explains why craniopharyngiomas — Rathke's pouch remnants — arise in the suprasellar region."},
+{s:3,q:"Oxytocin is secreted by the posterior pituitary, but where is it actually synthesized? What happens if that site is damaged?",a:"Oxytocin is <strong>synthesized in hypothalamic neurons</strong>, primarily in the <strong>paraventricular nucleus (PVN)</strong> and also the supraoptic nucleus. It is transported down axons to the posterior pituitary for storage and release. Damage to these hypothalamic nuclei — not the posterior pituitary itself — impairs oxytocin synthesis and secretion."},
+{s:3,q:"Why does disruption of the hypothalamic-hypophysial portal system lead to increased prolactin secretion, rather than a decrease?",a:"Prolactin is under <strong>tonic inhibition</strong> by hypothalamic <strong>dopamine</strong> delivered via the portal system. When portal flow is disrupted, dopamine no longer reaches lactotrophs — removing the inhibitory brake — so prolactin rises. This makes prolactin unique among anterior pituitary hormones: it is primarily regulated by inhibition, not stimulation."},
+{s:3,q:"A patient treated with a dopamine receptor blocker develops galactorrhea. Explain the mechanism.",a:"Dopamine normally inhibits prolactin secretion by binding D2 receptors on anterior pituitary lactotrophs. <strong>Blocking dopamine receptors removes this tonic inhibition</strong> → prolactin rises (hyperprolactinemia). Elevated prolactin stimulates breast alveolar cells to produce milk, causing galactorrhea even in the absence of pregnancy or breastfeeding."},
+{s:3,q:"A patient loses all corticotroph cells after pituitary surgery. What downstream endocrine effect results, and why?",a:"Corticotrophs secrete <strong>ACTH</strong>, which drives adrenal cortex production of <strong>cortisol</strong>. Loss of corticotrophs → no ACTH → adrenal cortical atrophy → <strong>secondary adrenal insufficiency</strong>. The patient cannot mount a cortisol stress response. Unlike primary Addison's, ACTH is absent/low and there is no hyperpigmentation (no ACTH/MSH to stimulate melanocytes)."},
+{s:3,q:"Which anterior pituitary hormones depend on hypothalamic portal delivery? Which hormones are released directly from the posterior pituitary?",a:"<strong>Anterior pituitary</strong> (require hypothalamic signals via portal): GH, TSH, ACTH, LH, FSH, prolactin. <strong>Posterior pituitary</strong> (released directly from nerve terminals synthesized in hypothalamus): <strong>ADH (vasopressin)</strong> and <strong>oxytocin</strong>. Disrupting portal flow affects anterior hormones (except prolactin rises); posterior pituitary function depends on axon integrity."},
+{s:3,q:"Low LH and FSH are found in a patient with secondary amenorrhea. What hormone should be measured to distinguish hypothalamic from pituitary etiology?",a:"Measure <strong>GnRH (gonadotropin-releasing hormone)</strong>. If GnRH is deficient → hypothalamic cause (e.g., Kallmann, functional hypothalamic amenorrhea). If GnRH is normal or elevated but the pituitary doesn't respond → pituitary cause (e.g., Sheehan syndrome, pituitary adenoma). Prolactin is already reported normal; estrogen will be low in both — so neither distinguishes the level of the lesion."},
+{s:3,q:"A pituitary tumor autonomously oversecretes ACTH. What happens to hypothalamic CRH secretion via negative feedback?",a:"Elevated cortisol (produced by ACTH-driven adrenal stimulation) provides <strong>negative feedback</strong> to the hypothalamus, <strong>suppressing CRH</strong>. However, the pituitary adenoma is relatively resistant to this feedback and continues secreting ACTH autonomously. This distinguishes Cushing's disease (CRH stimulation raises ACTH) from ectopic ACTH (no response to CRH), which is the basis of the CRF stimulation test."},
+{s:4,q:"What is the primary mediator through which GH exerts its effects on bone growth? Where is it mainly synthesized?",a:"Most of GH's growth-promoting effects are mediated by <strong>IGF-1 (Insulin-like Growth Factor-1, Somatomedin C)</strong>, synthesized primarily in the <strong>liver</strong> in response to GH. IGF-1 directly stimulates chondrocyte proliferation at epiphyseal plates and osteoblast activity. GH also has direct effects but IGF-1 is the dominant mediator."},
+{s:4,q:"A 16-year-old with open epiphyseal plates has excess GH (elevated IGF-1). What is the presentation and what bone growth mechanism is responsible?",a:"This produces <strong>gigantism</strong>. Excess IGF-1 drives <strong>chondrocyte proliferation at epiphyseal growth plates</strong> → bones elongate. The long bones grow in length at the cartilaginous epiphyses, and osteoblasts deposit new bone on periosteal surfaces (increasing width). Result: extreme height, jaw enlargement, thickened skull. Growth plate closure stops longitudinal growth."},
+{s:4,q:"A 48-year-old with closed epiphyseal plates has excess GH. What type of bones continue to grow and what clinical changes result?",a:"After epiphyseal fusion, long bones cannot elongate. However, <strong>membranous bones</strong> (jaw, skull, hands, feet, vertebrae) continue to grow in <strong>thickness</strong>. This causes <strong>acromegaly</strong>: prognathism (protruding jaw), enlarged supraorbital ridges, thickened hands/feet (increased glove and shoe size), coarsening of facial features."},
+{s:4,q:"List at least four physiological stimuli that are known to increase GH secretion.",a:"(1) <strong>Hypoglycemia</strong> (low blood glucose). (2) <strong>Low free fatty acids</strong> in blood. (3) <strong>Starvation or severe protein deficiency</strong>. (4) <strong>Exercise</strong>. (5) Physical trauma or emotional excitement. (6) <strong>Deep sleep</strong> (GH peaks in first 2 hrs of slow-wave sleep). (7) <strong>Ghrelin</strong> (stomach hormone before meals). (8) Arginine and other amino acids."},
+{s:4,q:"What is the 'diabetogenic' effect of elevated GH, and by what cellular mechanism does it cause elevated blood glucose?",a:"GH causes <strong>insulin resistance</strong> by: (1) <strong>Decreasing glucose uptake</strong> in peripheral tissues (muscle and fat) — opposing insulin's action on GLUT4 translocation. (2) <strong>Increasing hepatic gluconeogenesis</strong> and glucose release. Together these raise blood glucose. Chronically elevated GH (acromegaly) frequently leads to overt type 2 DM — termed 'pituitary diabetes.'"},
+{s:4,q:"A child has deficiencies of multiple anterior pituitary hormones with proportionate short stature and delayed sexual maturation. What is this diagnosis?",a:"<strong>Panhypopituitarism</strong> presenting as <strong>pituitary dwarfism</strong> in childhood. GH deficiency causes proportionate short stature (unlike achondroplasia). LH/FSH deficiency prevents puberty. TSH deficiency causes secondary hypothyroidism; ACTH deficiency causes secondary adrenal insufficiency. All growth is uniformly blunted, hence proportionate body habitus."},
+{s:4,q:"Somatostatin activity is increased pharmacologically. What effect is expected on anterior pituitary hormone secretion?",a:"Somatostatin (growth hormone-inhibiting hormone, GHIH) <strong>inhibits GH secretion</strong> from somatotrophs of the anterior pituitary. It also inhibits TSH secretion. This is the basis for using somatostatin analogs (e.g., <em>octreotide</em>) clinically to treat acromegaly and TSH-secreting pituitary tumors."},
+{s:5,q:"A man moves from Florida to Alaska. After 12 weeks his basal metabolic rate has increased ~15–20%. What hormonal mechanism explains this adaptation to cold?",a:"Cold stimulates the <strong>hypothalamic thermoregulatory center</strong> → increases <strong>TRH secretion</strong> → increases <strong>TSH</strong> from the anterior pituitary → increases thyroid hormone production. <strong>T3</strong> (the more active form) is maintained or increased in cold stress and drives the rise in BMR. This is an adaptive thermogenic response to chronic cold exposure."},
+{s:5,q:"Describe the cellular mechanism by which ADH (desmopressin) rapidly reduces urine output within 5–10 minutes.",a:"ADH binds <strong>V2 receptors</strong> on renal collecting duct cells → activates <strong>adenylyl cyclase</strong> → raises <strong>cAMP</strong> → activates PKA → phosphorylates intracellular vesicles containing <strong>aquaporin-2 (AQP2)</strong> water channels → vesicles insert AQP2 into the apical membrane within 5–10 min → water reabsorption increases dramatically. The process reverses when ADH is absent."},
+{s:5,q:"What are the key metabolic effects of excess thyroid hormone? Why do hyperthyroid patients lose weight despite increased appetite?",a:"Excess T3/T4: (1) Raises <strong>BMR 60–100%</strong>. (2) Accelerates utilization of glucose and fats. (3) Increases both protein synthesis AND catabolism (<em>net catabolic</em>). (4) Increases sympathetic activity (tachycardia, tremor, anxiety, sweating). Weight loss occurs because <strong>energy expenditure greatly exceeds caloric intake</strong> despite hyperphagia."},
+{s:5,q:"A Graves disease patient develops proptosis (exophthalmos). What are the two main pathologic mechanisms responsible for the eye findings?",a:"(1) <strong>Retro-orbital accumulation of glycosaminoglycans and edema</strong> in loose connective tissue — TSH-receptor antibodies stimulate retro-orbital fibroblasts to produce these deposits, physically pushing the eye forward. (2) <strong>Sympathetic overactivity</strong> causes upper eyelid retraction, creating the wide-eyed 'staring' appearance. The orbits themselves do not enlarge; extraocular muscle hypertrophy is secondary."},
+{s:5,q:"A Graves patient develops fever 39°C, HR 130, and confusion after a UTI. What serious complication should be suspected and why?",a:"<strong>Thyroid storm (thyrotoxic crisis)</strong> — a life-threatening exacerbation of hyperthyroidism precipitated by physiologic stress (infection here). Features: hyperpyrexia, extreme tachycardia, agitation/confusion, and markedly elevated thyroid hormones. Blood pressure is elevated (not low as in septic shock). Blood cultures are negative. Requires immediate beta-blockade, antithyroid drugs, iodide, and steroids."},
+{s:5,q:"What is the primary mechanism of action of methimazole? How does PTU differ mechanistically?",a:"Methimazole (and PTU) inhibit <strong>thyroid peroxidase</strong>, blocking: (1) <strong>Organification of iodide</strong> (adding iodine to tyrosine residues on thyroglobulin). (2) <strong>Coupling of iodotyrosines</strong> (forming T3/T4). They do NOT block iodide uptake (NIS). <em>PTU additionally inhibits peripheral 5'-deiodinase</em>, blocking T4→T3 conversion in tissues. Methimazole lacks this peripheral action."},
+{s:5,q:"In what clinical situation is PTU preferred over methimazole despite its black box warning? What is that warning?",a:"PTU is preferred: (1) <strong>First trimester of pregnancy</strong> (methimazole is teratogenic in T1 — aplasia cutis, choanal atresia). (2) <strong>Thyroid storm</strong> (PTU's peripheral T4→T3 block is valuable). (3) Adverse reactions to methimazole (not agranulocytosis or hepatitis). Black box warning: <strong>severe, sometimes fatal hepatitis</strong> — therefore PTU is reserved for specific indications only."},
+{s:5,q:"Levothyroxine is absorbed in which part of the GI tract? What co-administered substances impair its absorption?",a:"Levothyroxine is primarily absorbed in the <strong>duodenum and ileum</strong>. Absorption requires an acidic environment for tablet dissolution. Absorption is significantly impaired by: <em>calcium carbonate</em>, <em>proton pump inhibitors (omeprazole)</em> — which reduce gastric acidity, <em>iron supplements</em>, <em>cholestyramine</em>, and food. These should be separated from levothyroxine by at least 4 hours."},
+{s:5,q:"A patient on levothyroxine has persistently elevated TSH despite reported compliance. What drug interaction mechanism most likely explains inadequate thyroid hormone levels?",a:"<strong>Impaired intestinal absorption</strong> of levothyroxine — most likely from concurrent administration with <strong>calcium carbonate and omeprazole at breakfast</strong>. Calcium directly chelates levothyroxine in the gut; omeprazole raises gastric pH, reducing dissolution. All three taken together with food significantly impairs T4 absorption, leaving TSH elevated despite the patient actually taking the drug."},
+{s:6,q:"A patient has fatigue, hypotension, hyponatremia, hyperkalemia, hyperpigmentation, elevated ACTH, and low cortisol. What is the diagnosis and which structure is affected?",a:"<strong>Primary adrenal insufficiency (Addison's disease)</strong> — the <strong>adrenal glands</strong> fail to produce cortisol and aldosterone. Elevated ACTH (loss of negative feedback) acts on melanocortin receptors → hyperpigmentation. Aldosterone deficiency → hyponatremia and hyperkalemia. Cortisol deficiency → fatigue and hypotension. Elevated ACTH distinguishes primary (adrenal) from secondary (pituitary) insufficiency."},
+{s:6,q:"What is the CRF stimulation test, and how does its result differ between a pituitary ACTH-adenoma and ectopic ACTH production?",a:"CRH is injected; ACTH is measured before and after. <strong>Pituitary adenoma (Cushing's disease)</strong>: ACTH <em>rises</em> — the adenoma retains partial CRH-responsiveness. <strong>Ectopic ACTH</strong> (e.g., small cell lung cancer): ACTH does NOT rise — the tumor produces ACTH autonomously, independent of hypothalamic signals. <strong>Adrenal adenoma</strong>: baseline ACTH is already suppressed by autonomous cortisol → no rise."},
+{s:6,q:"List at least four mechanisms by which cortisol exerts anti-inflammatory effects at the cellular level.",a:"(1) <strong>Stabilizes lysosomal membranes</strong> → reduces release of proteolytic enzymes from damaged cells. (2) <strong>Decreases capillary permeability</strong> → limits plasma leakage into tissues. (3) <strong>Inhibits prostaglandin and leukotriene synthesis</strong> → reduces vasodilation and WBC migration. (4) <strong>Suppresses T-lymphocyte proliferation</strong>. (5) <strong>Reduces IL-1 release</strong> → attenuates fever. (6) Decreases phagocyte migration to inflamed tissue."},
+{s:6,q:"What percentage of adrenal medullary catecholamine secretion is epinephrine vs. norepinephrine? How do their cardiovascular effects differ?",a:"~<strong>80% epinephrine, 20% norepinephrine</strong> (proportions vary with conditions). Epinephrine has greater <strong>β-receptor stimulation</strong> → stronger cardiac effect (↑ HR, ↑ contractility, ↑ cardiac output) and 5–10× greater metabolic effect. Norepinephrine has stronger <strong>α1 vasoconstriction</strong> → raises total peripheral resistance and blood pressure more. Epinephrine increases cardiac output; norepinephrine increases SVR."},
+{s:6,q:"A patient with hypertensive episodes, palpitations, headaches, and sweating is suspected of having a pheochromocytoma. What blood or urine test is most useful for diagnosis?",a:"<strong>Plasma or urine metanephrines</strong> (metanephrine and normetanephrine) — catecholamine metabolites continuously produced by pheochromocytoma even between episodic secretion. These have the highest sensitivity. 24-hour urine catecholamines and fractionated metanephrines are also used. The case in the exam specifically asked for blood test → <em>metanephrines</em>."},
+{s:6,q:"A patient has elevated cortisol, low ACTH, and cushingoid features. What is the most likely source of autonomous cortisol excess?",a:"<strong>Adrenal adenoma (or adrenal cortical hyperplasia)</strong>. The low ACTH is the key distinguishing feature: autonomous cortisol from the adrenal gland suppresses pituitary ACTH and hypothalamic CRH via negative feedback. In pituitary Cushing's disease, ACTH is elevated (driving bilateral adrenal hyperplasia). Low ACTH + elevated cortisol = adrenal source."},
+{s:6,q:"During cardiac arrest, why is epinephrine preferred over norepinephrine? Explain based on receptor physiology.",a:"In arrest, goals are to restore rhythm and coronary perfusion. Epinephrine's strong <strong>β1 stimulation</strong> increases heart rate and contractility. Its <strong>α1 effect</strong> raises aortic diastolic pressure, improving coronary and cerebral perfusion pressure during CPR. Epinephrine also has 5–10× greater metabolic effect than norepinephrine. Norepinephrine's dominant peripheral vasoconstriction is less useful in this context."},
+{s:7,q:"A vegan with no dairy and limited sun exposure has low calcium and low vitamin D. What is the primary mechanism of hypocalcemia?",a:"<strong>Vitamin D deficiency</strong> → inadequate production of active 1,25-dihydroxyvitamin D → <strong>decreased intestinal calcium absorption</strong>. Without active vitamin D, the calcium transport proteins (TRPV5/6, calbindin) in the duodenum and jejunum are not upregulated, so dietary calcium is poorly absorbed regardless of intake. Secondary hyperparathyroidism may also develop."},
+{s:7,q:"What cells become entrapped in osteoid during bone formation? What are they called at that stage?",a:"<strong>Osteoblasts</strong> become entrapped in the osteoid matrix they secrete. Once trapped and quiescent, they are renamed <strong>osteocytes</strong>. Osteocytes are the most numerous bone cells; they maintain the matrix and act as mechanosensors, communicating through canaliculi. They no longer actively form bone but can regulate local remodeling signals."},
+{s:7,q:"What are the three main physiologic effects of PTH on calcium and phosphate homeostasis?",a:"(1) <strong>Bone resorption</strong>: PTH activates osteoclasts → releases Ca²⁺ and phosphate from bone mineral. (2) <strong>Renal effects</strong>: increases Ca²⁺ <em>reabsorption</em> in the distal tubule AND decreases phosphate reabsorption (phosphaturia) in the proximal tubule. (3) <strong>Vitamin D activation</strong>: stimulates renal 1α-hydroxylase → converts 25-OH-D to 1,25-dihydroxy-D → enhances intestinal Ca²⁺ absorption."},
+{s:7,q:"A parathyroid adenoma patient has high Ca²⁺, low phosphate, and high PTH. Describe the renal tubular mechanism responsible for low serum phosphate.",a:"PTH binds receptors in the <strong>proximal renal tubule</strong> → activates cAMP/PKA signaling → <strong>internalizes sodium-phosphate cotransporters (NaPi-IIa and NaPi-IIc)</strong> from the brush border membrane → phosphate reabsorption decreases → <strong>phosphaturia</strong> → low serum phosphate. This is the opposite of PTH's effect on calcium (which increases reabsorption in the distal tubule)."},
+{s:7,q:"Why is hypoparathyroidism treated with high-dose vitamin D plus oral calcium rather than PTH injections?",a:"PTH injections are impractical because: (1) Very <strong>short half-life</strong> — effect lasts only hours. (2) Repeated use leads to <strong>antibody formation</strong>, making PTH progressively less effective. (3) High cost. Instead, large-dose <strong>vitamin D</strong> (or active 1,25-dihydroxyvitamin D = calcitriol) + oral <strong>calcium 1–2 g/day</strong> replaces the calcium-raising function of PTH. Calcitriol is faster and more potent but harder to titrate."},
+{s:7,q:"What is the most common cause of hypoparathyroidism following thyroid surgery, and what electrolyte abnormality is expected?",a:"<strong>Accidental removal or devascularization of the parathyroid glands</strong> during thyroidectomy — the most common cause of hypoparathyroidism. Loss of PTH → <strong>hypocalcemia</strong> (low Ca²⁺) + <strong>hyperphosphatemia</strong>. Presents with neuromuscular excitability: perioral tingling, hand/foot cramping, Chvostek sign, Trousseau sign, and potentially tetany or seizures."},
+{s:7,q:"A CKD patient has low calcium, high phosphate, and markedly elevated PTH. Explain the full pathophysiologic chain from CKD to this lab pattern.",a:"(1) Failing kidneys cannot produce active <strong>1,25-dihydroxyvitamin D</strong> → decreased intestinal Ca²⁺ absorption → hypocalcemia. (2) Reduced GFR → <strong>phosphate retention</strong> → hyperphosphatemia → Ca²⁺ further falls (Ca-PO₄ complex formation). (3) Hypocalcemia drives <strong>compensatory PTH secretion</strong> (secondary hyperparathyroidism). PTH effects are blunted by vitamin D deficiency and end-organ resistance."},
+{s:7,q:"A lung mass causes hypercalcemia with no bone metastases on bone scan. What substance is most likely elevated and from what cancer type?",a:"<strong>PTHrP (Parathyroid Hormone-related Peptide)</strong> — secreted by the tumor itself. PTHrP structurally mimics PTH at its receptor, raising Ca²⁺ via the same mechanisms. Most commonly produced by <strong>squamous cell carcinoma of the lung</strong>. Serum PTH will be <em>suppressed</em> (by hypercalcemia), but PTHrP is elevated — this is the key distinguishing lab finding."},
+{s:7,q:"How does calcitonin lower serum calcium? On which cells does it primarily act?",a:"Calcitonin (from parafollicular C cells of the thyroid) lowers Ca²⁺ by: (1) <strong>Directly inhibiting osteoclast activity</strong> → reduced bone resorption → Ca²⁺ returns to bone. (2) Decreasing new osteoclast formation. (3) Possibly increasing renal Ca²⁺ excretion. It acts primarily on <strong>osteoclasts</strong>. Calcitonin analogs (e.g., salmon calcitonin) are used clinically for acute hypercalcemia and Paget's disease."},
+{s:7,q:"What is tertiary hyperparathyroidism, and in what clinical setting does it most commonly occur?",a:"Tertiary hyperparathyroidism occurs when <strong>secondary hyperparathyroidism (driven by CKD-induced hypocalcemia) becomes autonomous</strong>. After years of hyperstimulation, parathyroid cells undergo hyperplasia and begin secreting PTH independently of serum calcium. Classic setting: <strong>after renal transplantation</strong> — the new kidney corrects phosphate retention and restores vitamin D activation, but PTH secretion remains elevated, causing post-transplant hypercalcemia."},
+{s:7,q:"A patient with primary hyperparathyroidism has kidney stones and subperiosteal bone resorption on X-ray. What bone histologic finding would be expected?",a:"<strong>Increased osteoclasts</strong> — the hallmark of <em>osteitis cystica fibrosa</em> (von Recklinghausen disease of bone). Chronically elevated PTH activates osteoclasts, which erode bone and create fibrous replacement, cysts, and 'brown tumors' (giant cell-rich lesions). Radiographically this produces the classic 'salt and pepper skull' and subperiosteal resorption on radial side of middle phalanges."},
+{s:8,q:"What are the three major cell types of the islets of Langerhans and what hormone does each secrete?",a:"<strong>Beta cells (~60%)</strong>: secrete <em>insulin</em> and amylin — located centrally. <strong>Alpha cells (~25%)</strong>: secrete <em>glucagon</em>. <strong>Delta cells (~10%)</strong>: secrete <em>somatostatin</em>. Also: PP cells secrete pancreatic polypeptide. Each islet is organized around capillaries. Beta cells are in the center; alpha and delta cells are at the periphery of the islet."},
+{s:8,q:"C-peptide is released in equimolar amounts with insulin. What is its diagnostic value in distinguishing endogenous from exogenous insulin excess?",a:"C-peptide is produced <em>only</em> by the pancreas when endogenous proinsulin is cleaved. Exogenous insulin preparations contain <em>no</em> C-peptide. Therefore: <strong>high insulin + high C-peptide</strong> = endogenous excess (insulinoma or sulfonylurea use). <strong>High insulin + low C-peptide</strong> = exogenous insulin injection (factitious hypoglycemia). C-peptide is also used to monitor residual β-cell function in T1DM."},
+{s:8,q:"A patient suspected of injecting exogenous insulin has hypoglycemia and high insulin. What confirmatory lab finding would confirm this?",a:"<strong>Low C-peptide</strong>. Exogenous insulin lowers blood glucose → this and direct feedback suppresses endogenous insulin secretion → C-peptide falls. High serum insulin (from injected drug) combined with low C-peptide is the diagnostic signature of <strong>factitious hypoglycemia from exogenous insulin</strong>. An insulinoma would show both high insulin AND high C-peptide."},
+{s:8,q:"What are the four ADA diagnostic criteria for diabetes mellitus? Give the specific threshold values.",a:"(1) <strong>Fasting plasma glucose ≥ 126 mg/dL</strong>. (2) <strong>2-hr OGTT glucose ≥ 200 mg/dL</strong> (75 g load). (3) <strong>Random plasma glucose ≥ 200 mg/dL</strong> with classic hyperglycemic symptoms. (4) <strong>HbA1c ≥ 6.5%</strong>. Pre-diabetes: FPG 100–125, HbA1c 5.7–6.4%. A second confirmatory test is required unless unequivocal hyperglycemia with symptoms is present."},
+{s:8,q:"A child presents with DKA, low C-peptide, and hyperglycemia. What pathophysiologic mechanism distinguishes this from Type 2 DM?",a:"<strong>Type 1 DM</strong>: <strong>autoimmune destruction of pancreatic β-cells</strong> → absolute insulin deficiency. Low C-peptide confirms absent endogenous insulin production. Without insulin: glucose cannot enter cells → hyperglycemia; fat breakdown produces ketone bodies → DKA; protein catabolism accelerates. T2DM involves insulin resistance with elevated or normal C-peptide (preserved β-cell function)."},
+{s:8,q:"A teenager with obesity, acanthosis nigricans, elevated C-peptide, and fasting glucose of 160 mg/dL most likely has which type of diabetes? What mechanism is responsible?",a:"<strong>Type 2 DM</strong>. Mechanism: <strong>peripheral insulin resistance</strong> (primarily in muscle, fat, and liver) combined with inadequate β-cell compensation (relative insulin deficiency). Elevated C-peptide confirms ongoing endogenous insulin production (hyperinsulinemia as a compensatory response). Acanthosis nigricans is a cutaneous marker of insulin resistance."},
+{s:8,q:"After a high-protein, low-carbohydrate meal, glucagon rises. What physiologic process does this elevated glucagon support?",a:"Amino acids (especially arginine, alanine) directly stimulate glucagon secretion. Elevated glucagon drives <strong>hepatic gluconeogenesis</strong> — converting amino acids to glucose — ensuring blood glucose remains stable when dietary carbohydrate intake is minimal. This is why glucagon and insulin can both rise after a protein meal, even though their classic relationship is antagonistic."},
+{s:8,q:"What receptor type does glucagon signal through, and what intracellular cascade does it activate?",a:"Glucagon binds a <strong>GPCR</strong> on hepatocytes → activates <strong>adenylyl cyclase</strong> → raises <strong>cAMP</strong> → activates PKA → phosphorylates phosphorylase kinase → activates glycogen phosphorylase b → <strong>glycogenolysis</strong> releases glucose into blood. cAMP/PKA also activates PEPCK and other gluconeogenic enzymes, stimulating <strong>gluconeogenesis</strong>."},
+{s:8,q:"In hypoglycemia, what hormonal changes occur — specifically for glucagon, epinephrine, and insulin?",a:"Counterregulatory response to hypoglycemia: <strong>Glucagon ↑ several-fold</strong> (primary counterregulatory hormone — drives hepatic glycogenolysis and gluconeogenesis). <strong>Epinephrine ↑</strong> (enhances glycogenolysis, causes adrenergic warning symptoms of hypoglycemia — tremor, tachycardia, sweating). <strong>Insulin ↓</strong> (removed glucose stimulus). Somatostatin does NOT increase in hypoglycemia."},
+{s:8,q:"An insulinoma patient would have what pattern of proinsulin and C-peptide? How does this differ from factitious hypoglycemia?",a:"<strong>Insulinoma</strong>: both <em>proinsulin</em> and <em>C-peptide</em> are <strong>elevated</strong> — the tumor autonomously processes proinsulin → insulin + C-peptide in equimolar amounts, and proinsulin itself may be incompletely cleaved. <strong>Factitious hypoglycemia (exogenous insulin)</strong>: proinsulin normal/low, C-peptide <em>low</em> — exogenous insulin suppresses endogenous production and contains no C-peptide."},
+{s:8,q:"In insulin-resistant skeletal muscle (Type 2 DM), what is the primary cellular transport mechanism that is impaired?",a:"Impaired <strong>GLUT4 translocation</strong> to the plasma membrane. Normally, insulin → IRS-1 → PI3K → AKT → causes intracellular GLUT4 vesicles to fuse with the cell membrane, enabling glucose entry. In insulin resistance, this signaling cascade is defective — GLUT4 remains intracellular → reduced glucose uptake → hyperglycemia despite normal or elevated circulating insulin levels."},
+{s:9,q:"What is the mechanism of action of insulin lispro, and why is it administered 15 minutes before meals?",a:"Insulin lispro is a <strong>rapid-acting analog</strong> with amino acid substitutions that prevent self-aggregation, allowing faster subcutaneous absorption. Onset: 5–15 min; peak: 1–1.5 hr; duration: 3–4 hr. Mechanism: insulin receptor (RTK) activation → GLUT4 translocation → glucose uptake. Given 15 min before meals to match the post-prandial glucose rise, avoiding both pre-meal hypoglycemia and post-meal hyperglycemia."},
+{s:9,q:"Why is regular insulin (not rapid-acting analogs) used for IV infusion in DKA management?",a:"<strong>Regular insulin (U-100)</strong> is the only insulin formulation approved for <strong>intravenous administration</strong>. It is water-soluble and has a predictable, titratable IV pharmacokinetic profile (onset within minutes IV). Rapid-acting analogs (lispro, aspart, glulisine) are designed exclusively for subcutaneous use and lack safety/efficacy data for IV administration in the acute inpatient setting."},
+{s:9,q:"Insulin NPH has onset 2–4 hr, peak 4–10 hr, duration 12–18 hr. What pharmacologic property accounts for this delayed-action profile?",a:"NPH (Neutral Protamine Hagedorn) contains insulin combined with <strong>protamine</strong> at neutral pH, forming a crystalline depot after subcutaneous injection. This depot dissolves slowly — creating an <em>intermediate-acting</em> profile with a defined peak. Unlike glargine (which forms microprecipitate releasing uniformly), NPH has a variable peak that increases hypoglycemia risk, especially overnight."},
+{s:9,q:"Describe the pharmacodynamic profile of insulin glargine. Why is it described as 'peakless'?",a:"Insulin glargine is a <strong>long-acting basal analog</strong>: onset 0.5–1 hr, <strong>no significant peak</strong>, duration ~24 hr. Formulated at pH 4; after subcutaneous injection, the neutral tissue environment causes microprecipitate formation, creating a slow-release depot with steady, constant absorption. The flat concentration-time curve eliminates the peak-associated hypoglycemia risk. Given once daily for basal glucose control."},
+{s:9,q:"What is the mechanism of action of sulfonylureas? Name the specific channel they target on pancreatic beta cells.",a:"Sulfonylureas bind the <strong>SUR1 subunit of ATP-sensitive potassium (K-ATP) channels</strong> on β-cells → close the channel → membrane depolarizes → opens <strong>voltage-gated calcium channels</strong> → Ca²⁺ influx → <strong>insulin vesicle exocytosis</strong>. This stimulates insulin release <em>independent of blood glucose</em> — explaining the hypoglycemia risk. Examples: glipizide, glyburide, glimepiride."},
+{s:9,q:"A sulfonylurea patient starts a strict ketogenic diet and develops hypoglycemia. Why is this combination particularly dangerous?",a:"Sulfonylureas stimulate insulin secretion <em>regardless of glucose level</em> (glucose-independent mechanism via K-ATP channel closure). On a ketogenic diet, dietary carbohydrate intake is minimal → blood glucose is already low. The ongoing sulfonylurea-driven insulin release further drives glucose down with no dietary glucose to compensate. The drug has no physiologic 'off switch' based on glucose level."},
+{s:9,q:"What is a disulfiram-like reaction, and which class of antidiabetic drug is associated with it when combined with alcohol?",a:"A disulfiram-like reaction: alcohol intake → <strong>acetaldehyde accumulates</strong> (aldehyde dehydrogenase inhibited) → flushing, nausea, vomiting, tachycardia. <strong>Sulfonylureas</strong> (especially first-generation ones like chlorpropamide; also reported with glyburide) can cause this reaction. The most clinically important side effect of sulfonylureas is <strong>hypoglycemia</strong> (weight gain is also common due to anabolic insulin effects)."},
+{s:9,q:"What is the mechanism of action of metformin? Why is it contraindicated in liver failure and significant renal insufficiency?",a:"Metformin primarily <strong>inhibits hepatic gluconeogenesis and lipogenesis</strong> (via mitochondrial complex I inhibition). It lowers fasting glucose without stimulating insulin. Contraindicated in: <strong>Liver failure</strong> — impaired lactate clearance → accumulation → lactic acidosis (MALA). <strong>Renal insufficiency (eGFR &lt; 30)</strong> — metformin accumulates, further impairing lactate clearance. Alcohol use and acute illness also increase MALA risk."},
+{s:9,q:"What is the mechanism of action of thiazolidinediones (TZDs)? What receptor do they activate?",a:"TZDs (pioglitazone, rosiglitazone) are <strong>PPAR-γ (peroxisome proliferator-activated receptor-gamma) agonists</strong>. PPAR-γ is a nuclear receptor in adipocytes that, when activated, increases expression of GLUT4 and other insulin-sensitizing genes → improved <strong>peripheral insulin sensitivity</strong>. They do NOT stimulate insulin secretion. Adverse effects: weight gain, fluid retention, heart failure exacerbation, and fractures."},
+{s:9,q:"What is the mechanism of action of acarbose, and what GI side effects result from its pharmacology?",a:"Acarbose is an <strong>α-glucosidase inhibitor</strong>: it competitively inhibits brush-border intestinal enzymes (maltase, sucrase, glucoamylase) that break down complex carbohydrates into monosaccharides, slowing carbohydrate absorption and blunting post-meal glucose spikes. Undigested carbohydrates reach the colon → bacterial fermentation → <strong>gas, flatulence, bloating, and diarrhea</strong>. These are dose-dependent and usually diminish over time."},
+{s:9,q:"SGLT2 inhibitors work by what mechanism, and what are their major adverse effects?",a:"<strong>SGLT2 inhibitors</strong> (empagliflozin, dapagliflozin, canagliflozin) block sodium-glucose cotransporter 2 in the <strong>proximal renal tubule</strong> → prevent glucose reabsorption → glucosuria → lower blood glucose independent of insulin. Adverse effects: <strong>genital mycotic infections</strong> (most common), UTIs, volume depletion, euglycemic DKA, and fracture risk (canagliflozin). Cardiovascular and renal protective benefits are established."},
+{s:10,q:"What five hormones are essential for normal spermatogenesis? Briefly explain each one's role.",a:"(1) <strong>Testosterone</strong> (Leydig cells): essential for germinal cell division — first stage of sperm formation. (2) <strong>LH</strong>: stimulates Leydig cells to secrete testosterone. (3) <strong>FSH</strong>: stimulates Sertoli cells — required for spermiogenesis (spermatid → sperm maturation). (4) <strong>Estrogen</strong> (Sertoli cells via aromatase): likely required for spermatogenesis. (5) <strong>GH</strong>: promotes spermatogonial division; deficiency causes severe spermatogenic failure."},
+{s:10,q:"Low LH, low FSH, and low testosterone in an infertile man — what does this hormonal pattern suggest about the location of the defect?",a:"<strong>Secondary (central) hypogonadism</strong> — the defect is at the <strong>hypothalamus or pituitary</strong>. Insufficient gonadotropins mean the testes are not being stimulated to produce testosterone. The testes themselves may be structurally normal. Causes: Kallmann syndrome (GnRH deficiency), pituitary tumor, hyperprolactinemia (dopamine suppresses GnRH), or exogenous androgen use (suppresses LH/FSH)."},
+{s:10,q:"High LH, high FSH, and low testosterone in an infertile man — what does this pattern suggest?",a:"<strong>Primary testicular failure</strong> — the testes cannot respond to gonadotropins. Elevated LH/FSH reflect lost negative feedback (testosterone and inhibin B are low, removing pituitary suppression). Causes: Klinefelter syndrome (47,XXY — most common), mumps orchitis, radiation/chemotherapy damage, cryptorchidism, or trauma. Testosterone replacement will not restore fertility."},
+{s:10,q:"What is sperm capacitation, and why is cholesterol removal from the acrosomal membrane a necessary step?",a:"<strong>Capacitation</strong> is a 1–10 hour process in the female genital tract that activates sperm for fertilization. Key steps: (1) Uterine/fallopian tube fluids wash away inhibitory factors. (2) <strong>Cholesterol is removed</strong> from the acrosomal membrane — making it fragile enough to undergo the acrosome reaction (release digestive enzymes to penetrate the zona pellucida). (3) Calcium permeability increases → powerful whiplash flagellar motion. All are prerequisites for fertilization."},
+{s:10,q:"A man with a testicular mass has increased muscle mass, body hair, and voice deepening. What is the most likely tumor type?",a:"<strong>Leydig cell tumor</strong> — an interstitial (stromal) cell tumor that <strong>autonomously secretes testosterone</strong>, causing virilization. These are usually benign. A firm, hypoechoic testicular mass + androgen excess signs = Leydig cell tumor until proven otherwise. Seminomas present as painless masses and are associated with elevated β-hCG or AFP — they do NOT cause androgen excess."},
+{s:10,q:"Finasteride inhibits 5α-reductase. What specific conversion is blocked, and how does this treat male pattern baldness?",a:"5α-reductase converts <strong>testosterone → dihydrotestosterone (DHT)</strong> in target tissues (scalp, prostate, skin). DHT is far more potent than testosterone and causes <strong>androgenetic alopecia</strong> by miniaturizing scalp hair follicles (reduced follicle size, shortened anagen phase). Blocking DHT formation with finasteride slows or partially reverses hair loss. 5α-reductase does NOT affect aldosterone, aromatase, cGMP, or LH secretion."},
+{s:11,q:"A woman in the luteal phase has cyclical breast tenderness and mild cramping. Which hormone is primarily responsible?",a:"<strong>Progesterone</strong> — secreted by the corpus luteum during the luteal phase. Progesterone promotes development of breast lobules and alveoli, causing enlargement and tenderness. It also decreases uterine contractility. Estrogen peaks in the follicular phase and is less responsible for luteal symptoms. Prolactin causes milk production; HCG is produced only in pregnancy."},
+{s:11,q:"A 58-year-old postmenopausal woman is diagnosed with osteoporosis. What is the most likely hormonal etiology and cellular mechanism of bone loss?",a:"<strong>Estrogen deficiency</strong> after menopause. Estrogen normally suppresses osteoclast activity and promotes osteoblast survival. Without estrogen: (1) <strong>Increased osteoclastic bone resorption</strong>. (2) Decreased bone matrix synthesis. (3) Decreased calcium and phosphate deposition. Net result: accelerated bone loss → osteoporosis. This is the dominant cause; vitamin D deficiency, PTH dysregulation, and medications play secondary roles."},
+{s:11,q:"A 28-year-old has elevated FSH, low estrogen, irregular menses, and normal ovaries on ultrasound. What is the most likely diagnosis?",a:"<strong>Primary Ovarian Insufficiency (POI)</strong> — premature ovarian failure before age 40. The ovaries fail to produce adequate estrogen, removing negative feedback → FSH rises compensatorily. Normal ovary size/morphology on ultrasound distinguishes this from structural causes. Distinguished from hypothalamic amenorrhea (where FSH is low) and from hyperprolactinemia (where LH/FSH are suppressed)."},
+{s:11,q:"Hypothalamic amenorrhea presents with low LH and FSH. How does this differ from primary ovarian insufficiency (POI) in terms of FSH levels?",a:"In <strong>hypothalamic amenorrhea</strong>: reduced GnRH → low LH and <em>low-normal FSH</em> — the pituitary is understimulated. In <strong>POI</strong>: ovaries fail → estrogen is low → negative feedback is lost → <em>elevated FSH</em> — the pituitary is working hard to stimulate the failing ovaries. FSH level is the single most important lab value distinguishing the two conditions."},
+{s:12,q:"What three tumor types define MEN1? What gene mutation is responsible?",a:"<strong>MEN1 (Wermer syndrome)</strong>: (1) <strong>Parathyroid adenoma/hyperplasia</strong> (hypercalcemia — most common, ~95%). (2) <strong>Pancreatic neuroendocrine tumors</strong> (gastrinoma most common, also insulinoma, VIPoma). (3) <strong>Pituitary adenoma</strong> (prolactinoma most common). Mutation: <strong>MEN1 tumor suppressor gene</strong> (encodes menin). Autosomal dominant. Mnemonic: 3 P's — Parathyroid, Pancreas, Pituitary."},
+{s:12,q:"What three tumor types define MEN2A? What gene mutation is responsible?",a:"<strong>MEN2A (Sipple syndrome)</strong>: (1) <strong>Medullary thyroid carcinoma (MTC)</strong> — nearly 100% penetrance, often first manifestation. (2) <strong>Pheochromocytoma</strong> (bilateral, adrenal medulla). (3) <strong>Primary hyperparathyroidism</strong> (parathyroid hyperplasia). Mutation: <em>activating</em> mutation in <strong>RET proto-oncogene</strong>. Autosomal dominant. Prophylactic thyroidectomy is performed in RET mutation carriers."},
+{s:12,q:"How does MEN2B differ clinically from MEN2A? What additional physical findings distinguish MEN2B?",a:"MEN2B <em>lacks</em> primary hyperparathyroidism but adds: (1) <strong>Mucosal neuromas</strong> — nodules on lips, tongue, and conjunctivae. (2) <strong>Marfanoid habitus</strong> — tall, elongated limbs, hyperextensible joints. (3) <strong>More aggressive medullary thyroid carcinoma</strong> — appears in childhood, highly malignant, requires prophylactic thyroidectomy in infancy. Also RET mutation (codon 918). No parathyroid disease in MEN2B."},
+{s:12,q:"A 20-year-old has a pancreatic mass, a pituitary mass causing visual field loss, and hypercalcemia. Which MEN syndrome and what gene is mutated?",a:"<strong>MEN1</strong> — the classic triad of parathyroid disease (hypercalcemia), pancreatic NET, and pituitary adenoma (bitemporal hemianopsia from optic chiasm compression). Mutation: <strong>MEN1 gene</strong> (tumor suppressor encoding menin). The X-ray in the exam showed a pathologic fracture consistent with hypercalcemia-related bone disease."},
+{s:12,q:"A 25-year-old has medullary thyroid carcinoma, bilateral pheochromocytomas, mucosal neuromas, and marfanoid habitus. Which MEN syndrome?",a:"<strong>MEN2B</strong>. Distinguishing features from MEN2A: <em>mucosal neuromas</em> (lips, tongue, conjunctivae) + <em>marfanoid habitus</em>. MEN2B is caused by an activating <strong>RET mutation (typically codon 918)</strong>. The MTC in MEN2B is more aggressive than in MEN2A — screening and prophylactic thyroidectomy should begin in the first year of life for confirmed RET codon 918 mutations."}
+];
+
+// State
+let deck=[...ALL], idx=0, flipped=false, ratings={}, curSec=-1, mode='flash', animating=false;
+
+function init(){ buildSNav(); renderCard(); updateStats(); }
+
+function buildSNav(){
+  const el=document.getElementById('snavList'); el.innerHTML='';
+  const all=document.createElement('div');
+  all.className='snav-item'+(curSec===-1?' active':'');
+  all.innerHTML=`<div class="snav-dot" style="background:#8b949e"></div><span class="snav-name">All Sections</span><span class="snav-count">96</span><span class="snav-pct"></span>`;
+  all.onclick=()=>{curSec=-1;buildDeck();buildSNav();};
+  el.appendChild(all);
+  SECTIONS.forEach((s,i)=>{
+    const qs=ALL.filter(q=>q.s===i);
+    const done=qs.filter(q=>ratings[ALL.indexOf(q)]!==undefined).length;
+    const pct=qs.length?Math.round(done/qs.length*100):0;
+    const d=document.createElement('div');
+    d.className='snav-item'+(curSec===i?' active':'');
+    d.innerHTML=`<div class="snav-dot" style="background:${s.color}"></div><span class="snav-name">${s.name}</span><span class="snav-count">${qs.length}</span><span class="snav-pct">${pct?pct+'%':''}</span>`;
+    d.onclick=()=>{curSec=i;buildDeck();buildSNav();};
+    el.appendChild(d);
+  });
+}
+
+function buildDeck(){
+  deck=curSec===-1?[...ALL]:ALL.filter(q=>q.s===curSec);
+  idx=0; flipped=false;
+  const card=document.getElementById('theCard');
+  card.classList.remove('showing-answer','flipping');
+  hideRating(); renderCard(); updateStats();
+}
+
+function renderCard(){
+  if(!deck.length)return;
+  const c=deck[idx]; const s=SECTIONS[c.s];
+  document.getElementById('cardQ').innerHTML=c.q;
+  document.getElementById('cardA').innerHTML=c.a;
+  const ts=`background:${s.color}22;color:${s.color};border:1px solid ${s.color}44`;
+  document.getElementById('secTagF').textContent=s.short;
+  document.getElementById('secTagF').style.cssText=ts;
+  document.getElementById('secTagB').textContent=s.short;
+  const num=`${idx+1} / ${deck.length}`;
+  document.getElementById('cardNumF').textContent=num;
+  document.getElementById('cardNumB').textContent=num;
+  document.getElementById('cCur').textContent=idx+1;
+  document.getElementById('cTot').textContent=deck.length;
+  document.getElementById('prevBtn').disabled=idx===0;
+  document.getElementById('nextBtn').disabled=idx===deck.length-1;
+  // restore rating state
+  document.querySelectorAll('.rating-btn').forEach(b=>b.classList.remove('sel'));
+  const r=ratings[ALL.indexOf(c)];
+  if(r) document.querySelector('.rating-btn.'+r)?.classList.add('sel');
+}
+
+function handleCardClick(){ if(!animating) flipCard(); }
+
+function flipCard(){
+  animating=true;
+  const card=document.getElementById('theCard');
+  card.classList.add('flipping');
+  setTimeout(()=>{
+    flipped=!flipped;
+    card.classList.toggle('showing-answer',flipped);
+    card.classList.remove('flipping');
+    if(flipped){
+      document.getElementById('ratingRow').classList.remove('hidden');
+    }
+    animating=false;
+  },280);
+}
+
+function hideRating(){ document.getElementById('ratingRow').classList.add('hidden'); }
+
+function nextCard(){
+  if(animating||idx>=deck.length-1)return;
+  transitionCard(1);
+}
+function prevCard(){
+  if(animating||idx<=0)return;
+  transitionCard(-1);
+}
+function transitionCard(dir){
+  animating=true;
+  const card=document.getElementById('theCard');
+  card.classList.add('flipping');
+  setTimeout(()=>{
+    idx+=dir; flipped=false;
+    card.classList.remove('showing-answer','flipping');
+    hideRating(); renderCard();
+    animating=false;
+  },280);
+}
+
+function rate(r){
+  const c=deck[idx]; const oi=ALL.indexOf(c);
+  ratings[oi]=r;
+  document.querySelectorAll('.rating-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('.rating-btn.'+r)?.classList.add('sel');
+  updateStats(); buildSNav();
+  setTimeout(()=>{
+    if(idx<deck.length-1){ nextCard(); }
+    else { showResults(); }
+  },350);
+}
+
+function updateStats(){
+  const v=Object.values(ratings);
+  const got=v.filter(x=>x==='got').length;
+  const miss=v.filter(x=>x==='miss').length;
+  document.getElementById('sDone').textContent=v.length;
+  document.getElementById('sGot').textContent=got;
+  document.getElementById('sMiss').textContent=miss;
+  const pct=Math.round(v.length/ALL.length*100);
+  document.getElementById('progPct').textContent=pct+'%';
+  document.getElementById('progBar').style.width=pct+'%';
+}
+
+function showResults(){
+  const v=Object.values(ratings);
+  const got=v.filter(x=>x==='got').length;
+  const part=v.filter(x=>x==='part').length;
+  const miss=v.filter(x=>x==='miss').length;
+  const total=v.length;
+  const pct=total?Math.round((got+part*.5)/total*100):0;
+  document.getElementById('resScore').textContent=pct+'%';
+  document.getElementById('rG').textContent=got;
+  document.getElementById('rP').textContent=part;
+  document.getElementById('rM').textContent=miss;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeOverlay(){ document.getElementById('overlay').classList.remove('show'); }
+
+function resetAll(){
+  ratings={}; curSec=-1; deck=[...ALL]; idx=0; flipped=false;
+  const card=document.getElementById('theCard');
+  card.classList.remove('showing-answer','flipping');
+  hideRating(); buildSNav(); renderCard(); updateStats();
+  toast('Deck reset — all 96 cards');
+}
+
+function shuffleDeck(){
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  idx=0; flipped=false;
+  const card=document.getElementById('theCard');
+  card.classList.remove('showing-answer','flipping');
+  hideRating(); renderCard();
+  toast('Cards shuffled');
+}
+
+function reviewMissed(){
+  const missed=ALL.filter((_,i)=>ratings[i]==='miss'||ratings[i]==='part');
+  if(!missed.length){toast('No missed cards yet!');return;}
+  deck=[...missed]; idx=0; flipped=false; curSec=-1;
+  const card=document.getElementById('theCard');
+  card.classList.remove('showing-answer','flipping');
+  hideRating(); buildSNav(); renderCard(); updateStats();
+  toast(`Reviewing ${missed.length} missed card${missed.length>1?'s':''}`);
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('mFlash').classList.toggle('active',m==='flash');
+  document.getElementById('mList').classList.toggle('active',m==='list');
+  document.getElementById('flashMode').style.display=m==='flash'?'block':'none';
+  document.getElementById('listMode').style.display=m==='list'?'block':'none';
+  if(m==='list') buildList();
+}
+
+function buildList(){
+  const c=document.getElementById('listContainer'); c.innerHTML='';
+  let lastS=-1;
+  ALL.forEach((card,i)=>{
+    if(card.s!==lastS){
+      lastS=card.s;
+      const h=document.createElement('div');
+      h.className='list-section-head';
+      h.style.color=SECTIONS[card.s].color;
+      h.textContent=SECTIONS[card.s].name;
+      c.appendChild(h);
+    }
+    const wrap=document.createElement('div'); wrap.className='list-item';
+    const qd=document.createElement('div'); qd.className='list-q';
+    qd.innerHTML=`<span class="list-qnum">${i+1}.</span><span class="list-qtext">${card.q}</span><span class="list-arrow">▾</span>`;
+    const ad=document.createElement('div'); ad.className='list-a'; ad.innerHTML=card.a;
+    let open=false;
+    qd.onclick=()=>{open=!open;ad.style.display=open?'block':'none';wrap.classList.toggle('open',open);};
+    wrap.appendChild(qd); wrap.appendChild(ad); c.appendChild(wrap);
+  });
+}
+
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg;
+  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+document.addEventListener('keydown',e=>{
+  if(mode!=='flash')return;
+  if(e.key===' '||e.key==='Enter'){e.preventDefault();if(!animating)flipCard();}
+  if(e.key==='ArrowRight')nextCard();
+  if(e.key==='ArrowLeft')prevCard();
+  if(e.key==='1')rate('got');
+  if(e.key==='2')rate('part');
+  if(e.key==='3')rate('miss');
+});
+
+init();
+</script>
+</body>
+</html>
